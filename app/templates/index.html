@@ -5,28 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>השוואת מחירי מוצרים</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #3B82F6;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        /* Hide scrollbar for non-hover on mobile */
+        @media (max-width: 768px) {
+            .custom-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8 text-center">השוואת מחירי מוצרים</h1>
+    <div class="container mx-auto px-4 py-4 md:py-8 min-h-screen">
+        <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-8 text-center">השוואת מחירי מוצרים</h1>
         
-        <!-- Search Section -->
-        <div class="mb-8">
-            <div class="flex gap-4 mb-4">
-                <input type="text" id="searchInput" 
-                       class="flex-1 p-2 border rounded-lg" 
-                       placeholder="חפש מוצר...">
-                <button onclick="searchProducts()" 
-                        class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                    חפש
-                </button>
-            </div>
-        </div>
-
         <!-- Main Content -->
-        <div class="flex gap-8">
+        <div class="flex flex-col md:flex-row gap-4 md:gap-8">
+            <!-- Shopping List - Moves to top on mobile -->
+            <div class="w-full md:w-80 order-1 md:order-2">
+                <div class="bg-white p-4 rounded-lg shadow sticky top-4">
+                    <h2 class="text-xl font-semibold mb-4">רשימת קניות</h2>
+                    <div id="shoppingList" class="space-y-2 mb-4 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
+                        <!-- Shopping list items will be inserted here -->
+                    </div>
+                    <button id="compareButton" onclick="compareShops()" 
+                            class="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2 min-h-[40px]">
+                        <span>השווה מחירים</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Search Results / Comparison Results -->
-            <div class="flex-1">
+            <div class="flex-1 order-2 md:order-1">
+                <!-- Search Section -->
+                <div class="mb-4 md:mb-8 sticky top-4 z-10 bg-gray-100 pb-4">
+                    <div class="flex gap-2 md:gap-4">
+                        <input type="text" id="searchInput" 
+                               class="flex-1 p-2 border rounded-lg" 
+                               placeholder="חפש מוצר...">
+                        <button id="searchButton" onclick="searchProducts()" 
+                                class="bg-blue-500 text-white px-4 md:px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2 min-w-[80px] md:min-w-[100px] justify-center whitespace-nowrap">
+                            <span>חפש</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Search Results Section -->
                 <div id="searchSection">
                     <h2 class="text-xl font-semibold mb-4">תוצאות חיפוש</h2>
@@ -37,7 +93,7 @@
 
                 <!-- Comparison Results Section -->
                 <div id="comparisonSection" class="hidden">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4 sticky top-20 bg-gray-100 pb-2">
                         <h2 class="text-xl font-semibold">תוצאות השוואה</h2>
                         <button onclick="backToSearch()" 
                                 class="text-blue-500 hover:text-blue-700">
@@ -46,12 +102,12 @@
                     </div>
                     
                     <!-- Best Shops Summary -->
-                    <div id="bestShops" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div id="bestShops" class="space-y-4">
                         <!-- Best shops will be inserted here -->
                     </div>
 
                     <!-- Detailed Bill View -->
-                    <div id="detailedBill" class="hidden bg-white p-6 rounded-lg shadow">
+                    <div id="detailedBill" class="hidden bg-white p-4 md:p-6 rounded-lg shadow">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold">פירוט חשבון</h3>
                             <button onclick="hideDetailedBill()" 
@@ -65,20 +121,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Shopping List -->
-            <div class="w-80">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold mb-4">רשימת קניות</h2>
-                    <div id="shoppingList" class="space-y-2 mb-4">
-                        <!-- Shopping list items will be inserted here -->
-                    </div>
-                    <button onclick="compareShops()" 
-                            class="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-                        השווה מחירים
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -86,8 +128,9 @@
         let selectedProducts = new Map();
         let comparisonResults = null;
         let currentSort = { field: null, ascending: true };
+        let isLoading = false;
 
-        // Utility function to safely escape text for HTML and JavaScript
+        // Utility functions
         function escapeText(text) {
             if (!text) return '';
             return text
@@ -104,121 +147,302 @@
                 .replace(/\$/g, '\\$');
         }
 
-        async function searchProducts() {
-            const query = document.getElementById('searchInput').value;
-            if (!query) return;
+        function saveToLocalStorage() {
+            localStorage.setItem('shoppingList', JSON.stringify(Array.from(selectedProducts.entries())));
+        }
 
-            const response = await fetch(`/api/products/search?query=${encodeURIComponent(query)}`);
-            const products = await response.json();
-
-            const resultsDiv = document.getElementById('searchResults');
-            resultsDiv.className = "space-y-2";
-            resultsDiv.innerHTML = products.map(product => `
-                <div class="bg-white p-3 rounded-lg shadow hover:shadow-lg cursor-pointer flex items-center gap-4"
-                     onclick="addToList('${escapeText(product.id)}', '${escapeText(product.label)}')">
-                    <img src="data:image/png;base64,${product.image}" 
-                         alt="${escapeText(product.label)}"
-                         class="w-16 h-16 object-contain flex-shrink-0">
-                    <div class="flex-grow min-w-0">
-                        <h3 class="font-semibold text-lg truncate">${escapeText(product.label)}</h3>
-                        <p class="text-sm text-gray-600">${escapeText(product.manufacturer)}</p>
-                        <p class="text-sm text-gray-600">טווח מחירים: ₪${product.price_range[0]} - ₪${product.price_range[1]}</p>
-                    </div>
-                    <button class="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex-shrink-0">
-                        הוסף לרשימה
-                    </button>
-                </div>
-            `).join('');
+        // List management functions
+        function clearList() {
+            selectedProducts.clear();
+            updateShoppingList();
+            saveToLocalStorage();
         }
 
         function addToList(id, label) {
             if (selectedProducts.has(id)) return;
             
-            selectedProducts.set(id, label);
+            selectedProducts.set(id, { label, quantity: 1 });
             updateShoppingList();
+            saveToLocalStorage();
         }
 
         function removeFromList(id) {
             selectedProducts.delete(id);
             updateShoppingList();
+            saveToLocalStorage();
         }
 
+        function updateQuantity(id, delta) {
+            const product = selectedProducts.get(id);
+            if (!product) return;
+            
+            const newQuantity = Math.max(1, product.quantity + delta);
+            selectedProducts.set(id, { ...product, quantity: newQuantity });
+            updateShoppingList();
+            saveToLocalStorage();
+        }
+
+        // Component creation helpers
+        function createElement(tag, className = '', attributes = {}) {
+            const element = document.createElement(tag);
+            if (className) element.className = className;
+            Object.entries(attributes).forEach(([key, value]) => {
+                element.setAttribute(key, value);
+            });
+            return element;
+        }
+
+        function createButton(text, className = '', onClick = null) {
+            const button = createElement('button', className);
+            button.textContent = text;
+            if (onClick) button.onclick = onClick;
+            return button;
+        }
+
+        // Shopping List Components
+        function createQuantityControls(id, product) {
+            const container = createElement('div', 'flex items-center gap-1 ml-2');
+            
+            const minusBtn = createButton('-', 
+                'text-blue-500 hover:text-blue-700 w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100',
+                () => updateQuantity(id, -1)
+            );
+            
+            const quantitySpan = createElement('span', 'w-8 text-center');
+            quantitySpan.textContent = product.quantity;
+            
+            const plusBtn = createButton('+',
+                'text-blue-500 hover:text-blue-700 w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100',
+                () => updateQuantity(id, 1)
+            );
+            
+            const removeBtn = createButton('✕',
+                'text-red-500 hover:text-red-700 w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 ml-1',
+                () => removeFromList(id)
+            );
+
+            container.append(minusBtn, quantitySpan, plusBtn, removeBtn);
+            return container;
+        }
+
+        function createShoppingListItem(id, product) {
+            const item = createElement('div', 'flex items-center gap-2 bg-gray-50 p-2 rounded');
+            
+            const labelDiv = createElement('div', 'flex-grow');
+            labelDiv.textContent = product.label;
+            
+            const controls = createQuantityControls(id, product);
+            
+            item.append(labelDiv, controls);
+            return item;
+        }
+
+        // Search Results Components
+        function createProductCard(product) {
+            const card = createElement('div', 'bg-white p-3 rounded-lg shadow hover:shadow-lg cursor-pointer');
+            const container = createElement('div', 'flex flex-col md:flex-row md:items-center gap-3');
+            
+            const img = createElement('img', 'w-20 h-20 object-contain mx-auto md:mx-0', {
+                src: `data:image/png;base64,${product.image}`,
+                alt: product.label
+            });
+            
+            const details = createElement('div', 'flex-grow min-w-0 text-center md:text-right');
+            details.innerHTML = `
+                <h3 class="font-semibold text-lg truncate">${escapeText(product.label)}</h3>
+                <p class="text-sm text-gray-600">${escapeText(product.manufacturer)}</p>
+                <p class="text-sm text-gray-600">טווח מחירים: ₪${product.price_range[0]} - ₪${product.price_range[1]}</p>
+            `;
+            
+            const addButton = createButton(
+                selectedProducts.has(product.id) ? 'כבר ברשימה' : 'הוסף לרשימה',
+                'bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 w-full md:w-auto',
+                () => addToList(product.id, product.label)
+            );
+            
+            container.append(img, details, addButton);
+            card.appendChild(container);
+            return card;
+        }
+
+        // Comparison Components
+        function createShopCard(shop, totalProducts, lowestTotal, lowestPrices) {
+            const card = createElement('div', 
+                `bg-white rounded-lg shadow ${shop.has_all_products === "True" ? 'border-2 border-green-200' : ''}`
+            );
+            
+            // Header
+            const header = createElement('div', 
+                `p-4 ${shop.has_all_products === "True" ? 'bg-green-50' : ''} border-b`
+            );
+            
+            const title = createElement('div', 'font-bold text-lg mb-1');
+            title.textContent = shop.name;
+            
+            const status = createElement('div', 'text-sm text-gray-600 mb-1');
+            status.textContent = shop.has_all_products === "True" 
+                ? `${(((shop.total_price - lowestTotal) / lowestTotal) * 100).toFixed(1)}% יקר יותר`
+                : `${shop.product_count}/${totalProducts} מוצרים`;
+            
+            const infoContainer = createElement('div', 'flex items-center justify-between gap-2 mb-1');
+            const availability = createElement('div');
+            availability.innerHTML = shop.has_all_products === "True"
+                ? '<span class="text-green-600 text-sm">✓ ניתן להשוות</span>'
+                : '<span class="text-gray-500 text-sm">לא ניתן להשוות</span>';
+            
+            const shopLink = createElement('a', 'text-sm text-blue-500 hover:text-blue-700', {
+                href: shop.website,
+                target: '_blank'
+            });
+            shopLink.textContent = 'לחנות →';
+            
+            infoContainer.append(availability, shopLink);
+            
+            if (shop.has_all_products === "True") {
+                const total = createElement('div', 
+                    `text-xl font-bold mt-2 ${shop.total_price === lowestTotal ? 'text-green-600' : ''}`
+                );
+                total.textContent = `סה"כ: ₪${shop.total_price.toFixed(2)}`;
+                header.append(title, status, infoContainer, total);
+            } else {
+                header.append(title, status, infoContainer);
+            }
+            
+            // Products
+            const productsContainer = createElement('div', 'divide-y');
+            Array.from(selectedProducts.entries()).forEach(([productId, product]) => {
+                const productRow = createProductRow(shop, productId, product, lowestPrices);
+                productsContainer.appendChild(productRow);
+            });
+            
+            card.append(header, productsContainer);
+            return card;
+        }
+
+        function createProductRow(shop, productId, product, lowestPrices) {
+            const row = createElement('div', 'p-3 flex items-center justify-between gap-2');
+            
+            const productInfo = createElement('div', 'text-right');
+            const productName = createElement('div', 'font-medium');
+            productName.textContent = product.label;
+            
+            productInfo.appendChild(productName);
+            
+            if (product.quantity > 1) {
+                const quantity = createElement('div', 'text-sm text-gray-500');
+                quantity.textContent = `כמות: ${product.quantity}`;
+                productInfo.appendChild(quantity);
+            }
+            
+            const priceInfo = createElement('div', 'text-left');
+            const price = shop.prices.find(p => p.product_id === productId);
+            
+            if (price) {
+                const priceValue = parseFloat(price.מחיר);
+                const totalPriceValue = priceValue * product.quantity;
+                const isLowestPrice = shop.has_all_products === "True" && 
+                    totalPriceValue === lowestPrices.get(productId);
+                
+                const priceDiv = createElement('div', isLowestPrice ? 'text-green-600 font-bold' : '');
+                priceDiv.textContent = `₪${totalPriceValue.toFixed(2)}`;
+                
+                if (product.quantity > 1) {
+                    const unitPrice = createElement('div', 'text-xs text-gray-500');
+                    unitPrice.textContent = `₪${priceValue.toFixed(2)} ליחידה`;
+                    priceDiv.appendChild(unitPrice);
+                }
+                
+                if (shop.has_all_products === "True" && !isLowestPrice) {
+                    const comparison = createElement('div', 'text-xs text-gray-500');
+                    comparison.textContent = 
+                        `${(((totalPriceValue - lowestPrices.get(productId)) / lowestPrices.get(productId)) * 100).toFixed(1)}% יקר יותר`;
+                    priceDiv.appendChild(comparison);
+                }
+                
+                priceInfo.appendChild(priceDiv);
+            } else {
+                const notFound = createElement('div', 'text-gray-400');
+                notFound.textContent = 'לא נמצא';
+                priceInfo.appendChild(notFound);
+            }
+            
+            row.append(productInfo, priceInfo);
+            return row;
+        }
+
+        // Update functions
         function updateShoppingList() {
             const listDiv = document.getElementById('shoppingList');
-            listDiv.innerHTML = Array.from(selectedProducts.entries()).map(([id, label]) => `
-                <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                    <span>${escapeText(label)}</span>
-                    <button onclick="removeFromList('${escapeText(id)}')" 
-                            class="text-red-500 hover:text-red-700">
-                        ✕
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        async function compareShops() {
-            if (selectedProducts.size === 0) return;
-
-            const response = await fetch('/api/shops/compare', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(Array.from(selectedProducts.keys()))
-            });
+            listDiv.innerHTML = '';
             
-            comparisonResults = await response.json();
-            
-            // Hide search section and show comparison section
-            document.getElementById('searchSection').classList.add('hidden');
-            document.getElementById('comparisonSection').classList.remove('hidden');
-            document.getElementById('detailedBill').classList.add('hidden');
-            
-            // Show best shops summary
-            const bestShopsDiv = document.getElementById('bestShops');
-            
-            if (comparisonResults.message) {
-                bestShopsDiv.innerHTML = `
-                    <div class="col-span-3 bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-center">
-                        <p class="text-yellow-800 text-lg">${escapeText(comparisonResults.message)}</p>
-                        <p class="text-yellow-600 mt-2">נסה להסיר חלק מהמוצרים מהרשימה או לחפש מוצרים חלופיים</p>
-                    </div>
-                `;
+            if (selectedProducts.size === 0) {
+                const emptyMessage = createElement('div', 'text-center text-gray-500 py-4');
+                emptyMessage.textContent = 'הרשימה ריקה';
+                listDiv.appendChild(emptyMessage);
                 return;
             }
-
-            // Create a table view of all products and prices
-            const shops = comparisonResults.best_shops;
             
-            // Find the lowest total price for percentage calculations
-            const lowestTotal = Math.min(...shops.map(s => s.total_price));
+            const headerContainer = createElement('div', 'flex justify-end mb-2');
+            const clearButton = createButton('נקה רשימה', 'text-red-500 hover:text-red-700 text-sm', clearList);
+            headerContainer.appendChild(clearButton);
+            listDiv.appendChild(headerContainer);
             
-            // For each product, find its lowest price across shops
-            const lowestPrices = new Map();
-            Array.from(selectedProducts.keys()).forEach(productId => {
-                const prices = shops.map(shop => {
-                    const price = shop.prices.find(p => p.product_id === productId);
-                    return price ? parseFloat(price.מחיר) : Infinity;
-                });
-                lowestPrices.set(productId, Math.min(...prices));
+            selectedProducts.forEach((product, id) => {
+                listDiv.appendChild(createShoppingListItem(id, product));
             });
+        }
 
-            bestShopsDiv.innerHTML = `
-                <div class="col-span-3">
-                    <div class="overflow-x-auto">
+        function updateSearchResults(products) {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '';
+            
+            if (products.length === 0) {
+                const emptyMessage = createElement('div', 'text-center text-gray-500 py-8');
+                emptyMessage.textContent = 'לא נמצאו תוצאות';
+                resultsDiv.appendChild(emptyMessage);
+                return;
+            }
+            
+            products.forEach(product => {
+                resultsDiv.appendChild(createProductCard(product));
+            });
+        }
+
+        function updateComparisonResults(shops, totalProducts, lowestTotal, lowestPrices) {
+            const bestShopsDiv = document.getElementById('bestShops');
+            bestShopsDiv.innerHTML = '';
+            
+            if (window.innerWidth < 768) {
+                const container = createElement('div', 'space-y-4');
+                shops.forEach(shop => {
+                    container.appendChild(createShopCard(shop, totalProducts, lowestTotal, lowestPrices));
+                });
+                bestShopsDiv.appendChild(container);
+            } else {
+                bestShopsDiv.innerHTML = `
+                    <div class="overflow-x-auto custom-scrollbar border rounded-lg" style="max-width: calc(100vw - 400px);">
                         <table class="w-full bg-white rounded-lg shadow">
                             <thead>
                                 <tr class="bg-gray-50 border-b">
-                                    <th class="p-4 text-right">
+                                    <th class="p-3 md:p-4 text-right whitespace-nowrap sticky right-0 bg-gray-50 z-10">
                                         <button onclick="sortTable('name')" class="font-bold hover:text-blue-600">
                                             מוצר ↕
                                         </button>
                                     </th>
                                     ${shops.map(shop => `
-                                        <th class="p-4 text-center">
+                                        <th class="p-3 md:p-4 text-center whitespace-nowrap min-w-[200px] ${shop.has_all_products === "True" ? 'bg-green-50' : ''}">
                                             <div class="font-bold">${escapeText(shop.name)}</div>
                                             <div class="text-sm text-gray-600 mb-1">
-                                                ${(((shop.total_price - lowestTotal) / lowestTotal) * 100).toFixed(1)}% יקר יותר
+                                                ${shop.has_all_products === "True" ? 
+                                                    `${(((shop.total_price - lowestTotal) / lowestTotal) * 100).toFixed(1)}% יקר יותר` :
+                                                    `${shop.product_count}/${totalProducts} מוצרים`
+                                                }
+                                            </div>
+                                            <div class="flex items-center justify-center gap-2 mb-1">
+                                                ${shop.has_all_products === "True" ? 
+                                                    '<span class="text-green-600 text-sm">✓ ניתן להשוות</span>' :
+                                                    '<span class="text-gray-500 text-sm">לא ניתן להשוות</span>'
+                                                }
                                             </div>
                                             <a href="${escapeText(shop.website)}" 
                                                target="_blank" 
@@ -230,147 +454,228 @@
                                 </tr>
                             </thead>
                             <tbody id="comparisonTableBody">
-                                ${Array.from(selectedProducts.entries()).map(([productId, productName]) => `
+                                ${Array.from(selectedProducts.entries()).map(([productId, product]) => `
                                     <tr class="border-b hover:bg-gray-50" data-product-id="${escapeText(productId)}">
-                                        <td class="p-4 font-medium">${escapeText(productName)}</td>
+                                        <td class="p-3 md:p-4 font-medium whitespace-nowrap sticky right-0 bg-white">
+                                            ${escapeText(product.label)}
+                                            ${product.quantity > 1 ? `<span class="text-sm text-gray-500">× ${product.quantity}</span>` : ''}
+                                        </td>
                                         ${shops.map(shop => {
                                             const price = shop.prices.find(p => p.product_id === productId);
                                             const priceValue = price ? parseFloat(price.מחיר) : null;
-                                            const isLowestPrice = priceValue === lowestPrices.get(productId);
+                                            const totalPriceValue = priceValue ? priceValue * product.quantity : null;
+                                            const isLowestPrice = shop.has_all_products === "True" && totalPriceValue === lowestPrices.get(productId);
                                             return `
-                                                <td class="p-4 text-center">
+                                                <td class="p-3 md:p-4 text-center ${shop.has_all_products === "True" ? 'bg-green-50' : ''}">
                                                     ${price ? `
                                                         <div class="${isLowestPrice ? 'text-green-600 font-bold' : ''}">
-                                                            ₪${priceValue.toFixed(2)}
+                                                            ₪${totalPriceValue.toFixed(2)}
+                                                            ${product.quantity > 1 ? `
+                                                                <div class="text-xs text-gray-500">
+                                                                    ₪${priceValue.toFixed(2)} ליחידה
+                                                                </div>
+                                                            ` : ''}
                                                         </div>
-                                                        ${!isLowestPrice ? `
+                                                        ${shop.has_all_products === "True" && !isLowestPrice ? `
                                                             <div class="text-xs text-gray-500">
-                                                                ${(((priceValue - lowestPrices.get(productId)) / lowestPrices.get(productId)) * 100).toFixed(1)}% יקר יותר
+                                                                ${(((totalPriceValue - lowestPrices.get(productId)) / lowestPrices.get(productId)) * 100).toFixed(1)}% יקר יותר
                                                             </div>
                                                         ` : ''}
-                                                    ` : '-'}
+                                                    ` : '<div class="text-gray-400">לא נמצא</div>'}
                                                 </td>
                                             `;
                                         }).join('')}
                                     </tr>
                                 `).join('')}
                                 <tr class="bg-gray-50 font-bold">
-                                    <td class="p-4">
+                                    <td class="p-3 md:p-4 sticky right-0 bg-gray-50">
                                         <button onclick="sortTable('price')" class="hover:text-blue-600">
                                             סה"כ ↕
                                         </button>
                                     </td>
                                     ${shops.map(shop => `
-                                        <td class="p-4 text-center text-lg ${
-                                            shop.total_price === lowestTotal 
+                                        <td class="p-3 md:p-4 text-center text-lg ${
+                                            shop.has_all_products === "True" ? 'bg-green-50' : ''
+                                        } ${
+                                            shop.has_all_products === "True" && shop.total_price === lowestTotal 
                                             ? 'text-green-600' 
                                             : ''
                                         }">
-                                            ₪${shop.total_price.toFixed(2)}
+                                            ${shop.has_all_products === "True" ? 
+                                                `₪${shop.total_price.toFixed(2)}` :
+                                                '<span class="text-gray-400">-</span>'
+                                            }
                                         </td>
                                     `).join('')}
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                </div>
-            `;
-        }
-
-        // Sorting functionality
-        function sortTable(field) {
-            const tbody = document.getElementById('comparisonTableBody');
-            const rows = Array.from(tbody.getElementsByTagName('tr'));
-            
-            // Remove the total row for sorting
-            const totalRow = rows.pop();
-            
-            if (currentSort.field === field) {
-                currentSort.ascending = !currentSort.ascending;
-            } else {
-                currentSort = { field, ascending: true };
+                `;
             }
-            
-            rows.sort((a, b) => {
-                let valueA, valueB;
-                
-                if (field === 'name') {
-                    valueA = a.cells[0].textContent;
-                    valueB = b.cells[0].textContent;
-                } else if (field === 'price') {
-                    // Get the lowest price for each product
-                    const pricesA = Array.from(a.cells).slice(1).map(cell => {
-                        const price = cell.textContent.match(/₪([\d.]+)/);
-                        return price ? parseFloat(price[1]) : Infinity;
-                    });
-                    const pricesB = Array.from(b.cells).slice(1).map(cell => {
-                        const price = cell.textContent.match(/₪([\d.]+)/);
-                        return price ? parseFloat(price[1]) : Infinity;
-                    });
-                    valueA = Math.min(...pricesA);
-                    valueB = Math.min(...pricesB);
-                }
-                
-                const comparison = valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
-                return currentSort.ascending ? comparison : -comparison;
-            });
-            
-            // Reattach sorted rows and total row
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
-            tbody.appendChild(totalRow);
         }
 
-        function showDetailedBill(shopName) {
-            const shop = comparisonResults.best_shops.find(s => s.name === shopName);
-            if (!shop) return;
+        // Event handlers
+        async function searchProducts() {
+            const query = document.getElementById('searchInput').value;
+            if (!query || isLoading) return;
 
-            // Hide best shops summary and show detailed bill
-            document.getElementById('bestShops').classList.add('hidden');
-            document.getElementById('detailedBill').classList.remove('hidden');
+            // Switch back to search view if we're in comparison view
+            document.getElementById('searchSection').classList.remove('hidden');
+            document.getElementById('comparisonSection').classList.add('hidden');
 
-            // Show bill details
-            const billDetailsDiv = document.getElementById('billDetails');
-            billDetailsDiv.innerHTML = `
-                <div class="mb-4">
-                    <h4 class="font-bold text-lg">${shop.name.replace(/'/g, "\\'")}</h4>
-                    <p class="text-sm text-gray-600">
-                        <a href="${shop.website}" target="_blank" class="text-blue-500 hover:text-blue-700">
-                            ${shop.website}
-                        </a>
-                    </p>
-                </div>
-                <div class="space-y-2">
-                    ${shop.prices.map(price => `
-                        <div class="flex justify-between items-center py-2 border-b">
-                            <span>${selectedProducts.get(price.product_id)}</span>
-                            <span class="font-semibold">₪${parseFloat(price.מחיר).toFixed(2)}</span>
-                        </div>
-                    `).join('')}
-                    <div class="flex justify-between items-center pt-4 font-bold text-lg">
-                        <span>סה"כ</span>
-                        <span>₪${shop.total_price.toFixed(2)}</span>
-                    </div>
-                </div>
+            isLoading = true;
+            const searchButton = document.getElementById('searchButton');
+            const originalContent = searchButton.innerHTML;
+            searchButton.innerHTML = '<div class="spinner"></div>';
+            searchButton.disabled = true;
+
+            const resultsDiv = document.getElementById('searchResults');
+            const loadingDiv = createElement('div', 'flex items-center justify-center p-8');
+            loadingDiv.innerHTML = `
+                <div class="spinner"></div>
+                <span class="mr-3 text-gray-600">מחפש מוצרים...</span>
             `;
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(loadingDiv);
+
+            try {
+                const response = await fetch(`/api/products/search?query=${encodeURIComponent(query)}`);
+                const products = await response.json();
+                updateSearchResults(products);
+            } catch (error) {
+                console.error('Error in search:', error);
+                const errorDiv = createElement('div', 'text-center text-red-500 py-8');
+                errorDiv.textContent = 'אירעה שגיאה בחיפוש המוצרים';
+                resultsDiv.innerHTML = '';
+                resultsDiv.appendChild(errorDiv);
+            } finally {
+                isLoading = false;
+                searchButton.innerHTML = originalContent;
+                searchButton.disabled = false;
+            }
         }
 
-        function hideDetailedBill() {
-            document.getElementById('bestShops').classList.remove('hidden');
-            document.getElementById('detailedBill').classList.add('hidden');
+        async function compareShops() {
+            if (selectedProducts.size === 0 || isLoading) return;
+
+            isLoading = true;
+            const compareButton = document.getElementById('compareButton');
+            const originalContent = compareButton.innerHTML;
+            compareButton.innerHTML = `
+                <div class="spinner"></div>
+                <span>משווה מחירים...</span>
+            `;
+            compareButton.disabled = true;
+
+            try {
+                const productsWithQuantities = Array.from(selectedProducts.entries())
+                    .flatMap(([id, product]) => Array(product.quantity).fill(id));
+
+                const response = await fetch('/api/shops/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productsWithQuantities)
+                });
+                
+                comparisonResults = await response.json();
+                
+                document.getElementById('searchSection').classList.add('hidden');
+                document.getElementById('comparisonSection').classList.remove('hidden');
+                document.getElementById('detailedBill').classList.add('hidden');
+                
+                const bestShopsDiv = document.getElementById('bestShops');
+                
+                if (comparisonResults.message) {
+                    const messageDiv = createElement('div', 'bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-center');
+                    messageDiv.innerHTML = `
+                        <p class="text-yellow-800 text-lg">${escapeText(comparisonResults.message)}</p>
+                        <p class="text-yellow-600 mt-2">נסה להסיר חלק מהמוצרים מהרשימה או לחפש מוצרים חלופיים</p>
+                    `;
+                    bestShopsDiv.innerHTML = '';
+                    bestShopsDiv.appendChild(messageDiv);
+                    return;
+                }
+
+                const shops = comparisonResults.shops;
+                const totalProducts = comparisonResults.total_products;
+                
+                const shopsWithAllProducts = shops.filter(s => s.has_all_products === "True");
+                const lowestTotal = shopsWithAllProducts.length > 0 ? 
+                    Math.min(...shopsWithAllProducts.map(s => s.total_price)) : 0;
+                
+                const lowestPrices = new Map();
+                Array.from(selectedProducts.entries()).forEach(([productId, product]) => {
+                    const prices = shopsWithAllProducts.map(shop => {
+                        const price = shop.prices.find(p => p.product_id === productId);
+                        return price ? parseFloat(price.מחיר) * product.quantity : Infinity;
+                    });
+                    lowestPrices.set(productId, Math.min(...prices));
+                });
+
+                updateComparisonResults(shops, totalProducts, lowestTotal, lowestPrices);
+            } catch (error) {
+                console.error('Error in comparison:', error);
+                const errorDiv = createElement('div', 'bg-red-50 border border-red-200 p-4 rounded-lg text-center');
+                errorDiv.innerHTML = `
+                    <p class="text-red-800 text-lg">אירעה שגיאה בהשוואת המחירים</p>
+                    <p class="text-red-600 mt-2">אנא נסה שוב מאוחר יותר</p>
+                `;
+                bestShopsDiv.innerHTML = '';
+                bestShopsDiv.appendChild(errorDiv);
+            } finally {
+                isLoading = false;
+                compareButton.innerHTML = originalContent;
+                compareButton.disabled = false;
+            }
         }
 
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedList = localStorage.getItem('shoppingList');
+            if (savedList) {
+                selectedProducts = new Map(JSON.parse(savedList));
+                updateShoppingList();
+            }
+        });
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isLoading) {
+                searchProducts();
+            }
+        });
+
+        // Navigation functions
         function backToSearch() {
             document.getElementById('searchSection').classList.remove('hidden');
             document.getElementById('comparisonSection').classList.add('hidden');
-            document.getElementById('detailedBill').classList.add('hidden');
         }
 
-        // Handle Enter key in search input
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchProducts();
-            }
+        // Handle window resize for responsive layout
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (comparisonResults && !comparisonResults.message) {
+                    const shops = comparisonResults.shops;
+                    const totalProducts = comparisonResults.total_products;
+                    const shopsWithAllProducts = shops.filter(s => s.has_all_products === "True");
+                    const lowestTotal = shopsWithAllProducts.length > 0 ? 
+                        Math.min(...shopsWithAllProducts.map(s => s.total_price)) : 0;
+                    
+                    const lowestPrices = new Map();
+                    Array.from(selectedProducts.entries()).forEach(([productId, product]) => {
+                        const prices = shopsWithAllProducts.map(shop => {
+                            const price = shop.prices.find(p => p.product_id === productId);
+                            return price ? parseFloat(price.מחיר) * product.quantity : Infinity;
+                        });
+                        lowestPrices.set(productId, Math.min(...prices));
+                    });
+
+                    updateComparisonResults(shops, totalProducts, lowestTotal, lowestPrices);
+                }
+            }, 250);
         });
     </script>
 </body>
