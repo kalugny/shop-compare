@@ -10,7 +10,7 @@ from .services.shop_service import ShopService
 app = FastAPI(title="Shopping Price Comparison")
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Setup templates
 templates = Jinja2Templates(directory="app/templates")
