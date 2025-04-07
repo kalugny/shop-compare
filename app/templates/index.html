@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>השוואת מחירי מוצרים</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">השוואת מחירי מוצרים</h1>
+        
+        <!-- Search Section -->
+        <div class="mb-8">
+            <div class="flex gap-4 mb-4">
+                <input type="text" id="searchInput" 
+                       class="flex-1 p-2 border rounded-lg" 
+                       placeholder="חפש מוצר...">
+                <button onclick="searchProducts()" 
+                        class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+                    חפש
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex gap-8">
+            <!-- Search Results / Comparison Results -->
+            <div class="flex-1">
+                <!-- Search Results Section -->
+                <div id="searchSection">
+                    <h2 class="text-xl font-semibold mb-4">תוצאות חיפוש</h2>
+                    <div id="searchResults" class="space-y-2">
+                        <!-- Products will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Comparison Results Section -->
+                <div id="comparisonSection" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">תוצאות השוואה</h2>
+                        <button onclick="backToSearch()" 
+                                class="text-blue-500 hover:text-blue-700">
+                            ← חזור לחיפוש
+                        </button>
+                    </div>
+                    
+                    <!-- Best Shops Summary -->
+                    <div id="bestShops" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <!-- Best shops will be inserted here -->
+                    </div>
+
+                    <!-- Detailed Bill View -->
+                    <div id="detailedBill" class="hidden bg-white p-6 rounded-lg shadow">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">פירוט חשבון</h3>
+                            <button onclick="hideDetailedBill()" 
+                                    class="text-blue-500 hover:text-blue-700">
+                                חזור להשוואה
+                            </button>
+                        </div>
+                        <div id="billDetails" class="space-y-2">
+                            <!-- Bill details will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shopping List -->
+            <div class="w-80">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold mb-4">רשימת קניות</h2>
+                    <div id="shoppingList" class="space-y-2 mb-4">
+                        <!-- Shopping list items will be inserted here -->
+                    </div>
+                    <button onclick="compareShops()" 
+                            class="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                        השווה מחירים
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedProducts = new Map();
+        let comparisonResults = null;
+        let currentSort = { field: null, ascending: true };
+
+        // Utility function to safely escape text for HTML and JavaScript
+        function escapeText(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/`/g, '&#96;')
+                .replace(/\\/g, '\\\\')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/\t/g, '\\t')
+                .replace(/\$/g, '\\$');
+        }
+
+        async function searchProducts() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return;
+
+            const response = await fetch(`/api/products/search?query=${encodeURIComponent(query)}`);
+            const products = await response.json();
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.className = "space-y-2";
+            resultsDiv.innerHTML = products.map(product => `
+                <div class="bg-white p-3 rounded-lg shadow hover:shadow-lg cursor-pointer flex items-center gap-4"
+                     onclick="addToList('${escapeText(product.id)}', '${escapeText(product.label)}')">
+                    <img src="data:image/png;base64,${product.image}" 
+                         alt="${escapeText(product.label)}"
+                         class="w-16 h-16 object-contain flex-shrink-0">
+                    <div class="flex-grow min-w-0">
+                        <h3 class="font-semibold text-lg truncate">${escapeText(product.label)}</h3>
+                        <p class="text-sm text-gray-600">${escapeText(product.manufacturer)}</p>
+                        <p class="text-sm text-gray-600">טווח מחירים: ₪${product.price_range[0]} - ₪${product.price_range[1]}</p>
+                    </div>
+                    <button class="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 flex-shrink-0">
+                        הוסף לרשימה
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addToList(id, label) {
+            if (selectedProducts.has(id)) return;
+            
+            selectedProducts.set(id, label);
+            updateShoppingList();
+        }
+
+        function removeFromList(id) {
+            selectedProducts.delete(id);
+            updateShoppingList();
+        }
+
+        function updateShoppingList() {
+            const listDiv = document.getElementById('shoppingList');
+            listDiv.innerHTML = Array.from(selectedProducts.entries()).map(([id, label]) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                    <span>${escapeText(label)}</span>
+                    <button onclick="removeFromList('${escapeText(id)}')" 
+                            class="text-red-500 hover:text-red-700">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function compareShops() {
+            if (selectedProducts.size === 0) return;
+
+            const response = await fetch('/api/shops/compare', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(Array.from(selectedProducts.keys()))
+            });
+            
+            comparisonResults = await response.json();
+            
+            // Hide search section and show comparison section
+            document.getElementById('searchSection').classList.add('hidden');
+            document.getElementById('comparisonSection').classList.remove('hidden');
+            document.getElementById('detailedBill').classList.add('hidden');
+            
+            // Show best shops summary
+            const bestShopsDiv = document.getElementById('bestShops');
+            
+            if (comparisonResults.message) {
+                bestShopsDiv.innerHTML = `
+                    <div class="col-span-3 bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-center">
+                        <p class="text-yellow-800 text-lg">${escapeText(comparisonResults.message)}</p>
+                        <p class="text-yellow-600 mt-2">נסה להסיר חלק מהמוצרים מהרשימה או לחפש מוצרים חלופיים</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create a table view of all products and prices
+            const shops = comparisonResults.best_shops;
+            
+            // Find the lowest total price for percentage calculations
+            const lowestTotal = Math.min(...shops.map(s => s.total_price));
+            
+            // For each product, find its lowest price across shops
+            const lowestPrices = new Map();
+            Array.from(selectedProducts.keys()).forEach(productId => {
+                const prices = shops.map(shop => {
+                    const price = shop.prices.find(p => p.product_id === productId);
+                    return price ? parseFloat(price.מחיר) : Infinity;
+                });
+                lowestPrices.set(productId, Math.min(...prices));
+            });
+
+            bestShopsDiv.innerHTML = `
+                <div class="col-span-3">
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-white rounded-lg shadow">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="p-4 text-right">
+                                        <button onclick="sortTable('name')" class="font-bold hover:text-blue-600">
+                                            מוצר ↕
+                                        </button>
+                                    </th>
+                                    ${shops.map(shop => `
+                                        <th class="p-4 text-center">
+                                            <div class="font-bold">${escapeText(shop.name)}</div>
+                                            <div class="text-sm text-gray-600 mb-1">
+                                                ${(((shop.total_price - lowestTotal) / lowestTotal) * 100).toFixed(1)}% יקר יותר
+                                            </div>
+                                            <a href="${escapeText(shop.website)}" 
+                                               target="_blank" 
+                                               class="text-sm text-blue-500 hover:text-blue-700">
+                                                לחנות →
+                                            </a>
+                                        </th>
+                                    `).join('')}
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody">
+                                ${Array.from(selectedProducts.entries()).map(([productId, productName]) => `
+                                    <tr class="border-b hover:bg-gray-50" data-product-id="${escapeText(productId)}">
+                                        <td class="p-4 font-medium">${escapeText(productName)}</td>
+                                        ${shops.map(shop => {
+                                            const price = shop.prices.find(p => p.product_id === productId);
+                                            const priceValue = price ? parseFloat(price.מחיר) : null;
+                                            const isLowestPrice = priceValue === lowestPrices.get(productId);
+                                            return `
+                                                <td class="p-4 text-center">
+                                                    ${price ? `
+                                                        <div class="${isLowestPrice ? 'text-green-600 font-bold' : ''}">
+                                                            ₪${priceValue.toFixed(2)}
+                                                        </div>
+                                                        ${!isLowestPrice ? `
+                                                            <div class="text-xs text-gray-500">
+                                                                ${(((priceValue - lowestPrices.get(productId)) / lowestPrices.get(productId)) * 100).toFixed(1)}% יקר יותר
+                                                            </div>
+                                                        ` : ''}
+                                                    ` : '-'}
+                                                </td>
+                                            `;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                                <tr class="bg-gray-50 font-bold">
+                                    <td class="p-4">
+                                        <button onclick="sortTable('price')" class="hover:text-blue-600">
+                                            סה"כ ↕
+                                        </button>
+                                    </td>
+                                    ${shops.map(shop => `
+                                        <td class="p-4 text-center text-lg ${
+                                            shop.total_price === lowestTotal 
+                                            ? 'text-green-600' 
+                                            : ''
+                                        }">
+                                            ₪${shop.total_price.toFixed(2)}
+                                        </td>
+                                    `).join('')}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Sorting functionality
+        function sortTable(field) {
+            const tbody = document.getElementById('comparisonTableBody');
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+            
+            // Remove the total row for sorting
+            const totalRow = rows.pop();
+            
+            if (currentSort.field === field) {
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                currentSort = { field, ascending: true };
+            }
+            
+            rows.sort((a, b) => {
+                let valueA, valueB;
+                
+                if (field === 'name') {
+                    valueA = a.cells[0].textContent;
+                    valueB = b.cells[0].textContent;
+                } else if (field === 'price') {
+                    // Get the lowest price for each product
+                    const pricesA = Array.from(a.cells).slice(1).map(cell => {
+                        const price = cell.textContent.match(/₪([\d.]+)/);
+                        return price ? parseFloat(price[1]) : Infinity;
+                    });
+                    const pricesB = Array.from(b.cells).slice(1).map(cell => {
+                        const price = cell.textContent.match(/₪([\d.]+)/);
+                        return price ? parseFloat(price[1]) : Infinity;
+                    });
+                    valueA = Math.min(...pricesA);
+                    valueB = Math.min(...pricesB);
+                }
+                
+                const comparison = valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+                return currentSort.ascending ? comparison : -comparison;
+            });
+            
+            // Reattach sorted rows and total row
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+            tbody.appendChild(totalRow);
+        }
+
+        function showDetailedBill(shopName) {
+            const shop = comparisonResults.best_shops.find(s => s.name === shopName);
+            if (!shop) return;
+
+            // Hide best shops summary and show detailed bill
+            document.getElementById('bestShops').classList.add('hidden');
+            document.getElementById('detailedBill').classList.remove('hidden');
+
+            // Show bill details
+            const billDetailsDiv = document.getElementById('billDetails');
+            billDetailsDiv.innerHTML = `
+                <div class="mb-4">
+                    <h4 class="font-bold text-lg">${shop.name.replace(/'/g, "\\'")}</h4>
+                    <p class="text-sm text-gray-600">
+                        <a href="${shop.website}" target="_blank" class="text-blue-500 hover:text-blue-700">
+                            ${shop.website}
+                        </a>
+                    </p>
+                </div>
+                <div class="space-y-2">
+                    ${shop.prices.map(price => `
+                        <div class="flex justify-between items-center py-2 border-b">
+                            <span>${selectedProducts.get(price.product_id)}</span>
+                            <span class="font-semibold">₪${parseFloat(price.מחיר).toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                    <div class="flex justify-between items-center pt-4 font-bold text-lg">
+                        <span>סה"כ</span>
+                        <span>₪${shop.total_price.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function hideDetailedBill() {
+            document.getElementById('bestShops').classList.remove('hidden');
+            document.getElementById('detailedBill').classList.add('hidden');
+        }
+
+        function backToSearch() {
+            document.getElementById('searchSection').classList.remove('hidden');
+            document.getElementById('comparisonSection').classList.add('hidden');
+            document.getElementById('detailedBill').classList.add('hidden');
+        }
+
+        // Handle Enter key in search input
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchProducts();
+            }
+        });
+    </script>
+</body>
+</html> 
